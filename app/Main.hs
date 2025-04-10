@@ -1,8 +1,9 @@
 module Main where
 
-import qualified MyLib (someFunc)
+import SessionLib (generateMnemonic)
 
 main :: IO ()
 main = do
+  mnemonic <- generateMnemonic
   putStrLn "Hello, Haskell!"
-  MyLib.someFunc
+  putStrLn $ show  mnemonic

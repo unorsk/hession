@@ -1,5 +1,4 @@
-module SessionLib (someFunc) where
-import Data.List.NonEmpty (NonEmpty)
+module SessionLib (generateMnemonic) where
 import Data.Array.Byte (ByteArray)
 import LibSodium.Bindings.Random (randombytesBuf)
 import Data.Word (Word8)
@@ -7,16 +6,12 @@ import Foreign (Ptr, peekElemOff)
 import Foreign.Marshal (mallocBytes)
 import Text.Printf (printf)
 
-
-newtype Mnemonic = Mnemonic (NonEmpty Int) deriving (Show, Eq)
+type Mnemonic = [String]
 
 newtype DisplayName = DisplayName String deriving (Show, Eq)
 
 newtype SessionKeyPair = SessionKeyPair String
 
-someFunc :: IO ()
-someFunc = do
-  putStrLn "someFunc"
 
 ptrToHex :: Ptr Word8 -> IO String
 ptrToHex ptr = do
@@ -33,8 +28,43 @@ generateMnemonic = do
   hexString <- ptrToHex ptr
   return $ encodeMnemonic hexString
 
+
+--- >>> generateMnemonic
+-- ["elbow","tulips","radar","muppet","odometer","frying","baby","slug","ghetto","fancy","science","jury"]
+
+chopBy :: Int -> [a] -> [[a]]
+chopBy _ [] = []
+chopBy n str1 =
+  let (chunk, rest) = splitAt n str1
+  in chunk : chopBy n rest
+
+chopByTwoAndReverse :: String -> String
+chopByTwoAndReverse str = concat $ reverse $ chopBy 2 str
+
 encodeMnemonic :: String -> Mnemonic
-encodeMnemonic hexString = undefined
+encodeMnemonic hexString =
+   let eights = (chopBy 8 hexString)
+       twos = map chopByTwoAndReverse $ eights
+       chopped8 = chopBy 8 $ concat twos
+    in concatMap chopped8ToMnemonics chopped8
+      where 
+        chopped8ToMnemonics :: String -> [String]
+        chopped8ToMnemonics chopped8 =
+          let x = (read $ "0x" <> chopped8):: Int 
+              n = length mnemonicSet
+              w1 = x `mod` n
+              w2 = (x `div` n + w1) `mod` n
+              w3 = ((x `div` n `div` n) + w2) `mod` n in
+          [mnemonicSet !! w1, mnemonicSet !! w2, mnemonicSet !! w3]
+
+--- >>> encodeMnemonic' "HelloWorld123456SomeInte"
+--- >>> encodeMnemonic' "HelloWorld123456"
+
+
+--- >>> encodeMnemonic "FAFABEBEACAC010121213434"
+--- >>> encodeMnemonic "HelloWorld123456"
+-- ["seventh","dauntless","vapidly","noted","width","wipeout","stockpile","avoid","fazed"]
+-- Prelude.read: no parse
 
 decodeMnemonic :: Mnemonic -> String
 decodeMnemonic mnemonic = undefined
