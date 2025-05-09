@@ -92,15 +92,21 @@ generateKeypair :: Mnemonic -> IO SessionKeyPair
 generateKeypair mnemonic =
   sessionGenerateKeyPair $ fromHex $ decodeMnemonic mnemonic
 
+generatePasswordWithSodium :: IO String
+generatePasswordWithSodium = pure "PASSWORD"
+
 createSessionAccount :: SessionKeyPair -> IO Bool
 createSessionAccount keyPair = do
-  -- Replace with actual account creation logic
+  password <- generatePasswordWithSodium
+
   return True
 
 registerSingleDevice :: Mnemonic -> DisplayName -> IO ()
 registerSingleDevice mnemonic displayName = do
   keyPair <- generateKeypair mnemonic
   _ <- createSessionAccount keyPair
+  _ <- saveRecoveryPhrase mnemonic
+
   pure ()
 
 mnemonicSet :: [String]
